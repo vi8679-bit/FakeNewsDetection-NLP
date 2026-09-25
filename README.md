@@ -1,120 +1,56 @@
-# Fake News Detection using Natural Language Processing
+# Fake News Detection with NLP
 
-## Overview
-Fake news detection is an important problem in modern information systems where misleading or fabricated news articles can spread rapidly online. Machine learning and natural language processing techniques can help automatically identify misinformation by analyzing textual patterns.
+Classifying news articles as real or fake using TF-IDF text features and linear models, trained on 44,898 articles. The project also looks at *what the model actually learned*, and finds that high accuracy on this dataset largely comes from source-specific patterns rather than an understanding of misinformation.
 
-This project builds a machine learning pipeline to classify news articles as **real** or **fake** using natural language processing and supervised learning models.
+## Results
 
-The workflow includes data preprocessing, TF-IDF feature extraction, model training, cross-validation, and model interpretation.
+| Model | 5-fold CV accuracy | Test accuracy |
+|---|---|---|
+| Multinomial Naive Bayes | 0.933 | — |
+| **Logistic Regression** | **0.984** | **0.99** (precision, recall, F1 all ≈ 0.99) |
 
+## What the model learned (and why 99% should be read carefully)
 
-## Problem Statement
-The goal of this project is to develop a classification model that can automatically distinguish between real and fake news articles based on their textual content.
+Inspecting the Logistic Regression coefficients shows the strongest signals are:
 
-Detecting misinformation is important for improving information reliability on digital platforms.
+- **Real news:** `reuter`, `said`, `washington`, and weekday names such as `wednesday` and `tuesday`
+- **Fake news:** `via`, `imag` (image), `read`, `featur`, `com`, `gop`, `hillari`
 
+Every "real" article in this dataset comes from Reuters, and most begin with a dateline like *"WASHINGTON (Reuters) –"*. The fake articles come from other sites with their own habits ("Featured image via…", "Read more"). So the model is largely recognizing **which outlet wrote the article**, not whether it's true.
+
+**Takeaway:** a model this accurate on a benchmark could still fail on real-world articles from new sources. Checking coefficients or feature importances before trusting a score is essential. The next version of this project removes the Reuters dateline and publisher boilerplate and re-evaluates to measure how much genuine signal remains.
+
+## Approach
+
+1. **Data:** combined the Fake and True article sets (23,481 fake + 21,417 real) with a binary label.
+2. **Text preprocessing:** lowercasing, removing non-letters and English stopwords, Porter stemming (NLTK).
+3. **Features:** TF-IDF vectorization (89,633 terms).
+4. **Models:** Multinomial Naive Bayes and Logistic Regression, compared with stratified 5-fold cross-validation.
+5. **Evaluation:** classification reports and confusion matrices on a stratified 20% hold-out set.
+6. **Interpretation:** top positive and negative Logistic Regression coefficients.
 
 ## Dataset
-Dataset: Fake and Real News Dataset (Kaggle)
 
-The dataset contains two sets of news articles:
+[Fake and Real News Dataset (Kaggle)](https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset): political and world news articles, 2015–2018, with title, text, subject, and date.
 
-- Fake news articles
-- Real news articles
+## How to run
 
-After combining both datasets, the final dataset contains:
+```bash
+pip install -r requirements.txt
+jupyter notebook FakeNews.ipynb
+```
 
-**44,898 news articles**
+The notebook downloads the data automatically with `kagglehub`.
 
-Each article includes:
+## Tech stack
 
-- title
-- text
-- subject
-- date
+Python · pandas · NumPy · scikit-learn · NLTK · Matplotlib · Seaborn
 
-Target variable:
+## Next steps
 
-- **0 - Real news**
-- **1 - Fake news**
+- Strip datelines, "(Reuters)", URLs, and "Featured image via…" boilerplate, then re-train to measure performance without source leakage.
+- Test on articles from a different time period or outlets not seen in training.
+- Compare against a transformer model (e.g., DistilBERT) on the cleaned text.
 
-
-## Data Preprocessing
-Before model training, the text data was cleaned and normalized.
-
-Preprocessing steps included:
-
-- converting text to lowercase
-- removing punctuation and non-alphabetic characters
-- removing stopwords
-- stemming words using Porter Stemmer
-
-These steps reduce noise and improve feature representation.
-
-
-## Feature Extraction
-Text data was converted into numerical features using **TF-IDF (Term Frequency – Inverse Document Frequency)**.
-
-TF-IDF captures the importance of words within each document relative to the entire corpus.
-
-Feature matrix size:
-
-**(44,898 documents, 89,633 features)**
-
-
-## Machine Learning Models
-Two classification algorithms were evaluated:
-
-- Multinomial Naive Bayes
-- Logistic Regression
-
-Both models are commonly used for text classification tasks.
-
-
-## Cross-Validation Results
-
-| Model | Mean CV Accuracy |
-|------|------|
-| Multinomial Naive Bayes | 0.9332 |
-| Logistic Regression | 0.9844 |
-
-Logistic Regression achieved the best performance during cross-validation.
-
-## Test Set Performance (Logistic Regression)
-
-| Metric | Score |
-|------|------|
-| Accuracy | 0.99 |
-| Precision | 0.99 |
-| Recall | 0.99 |
-| F1 Score | 0.99 |
-
-The confusion matrix shows that the model correctly classifies the majority of both real and fake news articles.
-
-## Model Interpretation
-To understand which words contribute most strongly to predictions, the coefficients of the Logistic Regression model were analyzed.
-
-Examples of words strongly associated with **fake news** include:
-
-- via
-- gop
-- hillari
-- imag
-
-Examples of words strongly associated with **real news** include:
-
-- reuter
-- washington
-- monday
-- said
-
-This analysis helps interpret the linguistic patterns learned by the model.
-
-## Technologies Used
-Python  
-pandas  
-NumPy  
-scikit-learn  
-NLTK  
-Matplotlib  
-Seaborn  
+---
+**Author:** Indraneel Mannava · [LinkedIn](https://www.linkedin.com/in/indraneel-sarma-mannava/)
